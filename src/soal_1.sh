@@ -32,7 +32,11 @@ iface eth5 inet static
     address 10.76.5.1
     netmask 255.255.255.0
 
+echo 1 > /proc/sys/net/ipv4/ip_forward
+echo 'net.ipv4.ip_forward=1' > /etc/sysctl.conf
+
 iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE -s 10.76.0.0/16
+
 iptables -A FORWARD -i eth1 -o eth2 -j ACCEPT
 iptables -A FORWARD -i eth2 -o eth1 -j ACCEPT
 iptables -A FORWARD -i eth1 -o eth3 -j ACCEPT
@@ -53,6 +57,18 @@ iptables -A FORWARD -i eth3 -o eth5 -j ACCEPT
 iptables -A FORWARD -i eth5 -o eth3 -j ACCEPT
 iptables -A FORWARD -i eth4 -o eth5 -j ACCEPT
 iptables -A FORWARD -i eth5 -o eth4 -j ACCEPT
+
+iptables -A FORWARD -i eth1 -o eth0 -j ACCEPT
+iptables -A FORWARD -i eth2 -o eth0 -j ACCEPT
+iptables -A FORWARD -i eth3 -o eth0 -j ACCEPT
+iptables -A FORWARD -i eth4 -o eth0 -j ACCEPT
+iptables -A FORWARD -i eth5 -o eth0 -j ACCEPT
+
+iptables -A FORWARD -i eth0 -o eth1 -m state --state RELATED,ESTABLISHED -j ACCEPT
+iptables -A FORWARD -i eth0 -o eth2 -m state --state RELATED,ESTABLISHED -j ACCEPT
+iptables -A FORWARD -i eth0 -o eth3 -m state --state RELATED,ESTABLISHED -j ACCEPT
+iptables -A FORWARD -i eth0 -o eth4 -m state --state RELATED,ESTABLISHED -j ACCEPT
+iptables -A FORWARD -i eth0 -o eth5 -m state --state RELATED,ESTABLISHED -j ACCEPT
 
 # Node Elendil
 auto eth0
