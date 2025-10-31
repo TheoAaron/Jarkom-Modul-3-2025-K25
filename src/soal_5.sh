@@ -91,7 +91,7 @@ dig @localhost www.k25.com
 dig @localhost k25.com TXT
 dig -x 10.76.3.3 @localhost
 
-# Node Client
+# Node Client (Miriel, Celebrimbor)
 echo "nameserver 10.76.3.3" > /etc/resolv.conf
 nslookup www.k25.com
 dig k25.com TXT

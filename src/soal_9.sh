@@ -15,7 +15,7 @@ echo "nameserver 10.76.3.3" > /etc/resolv.conf
 
 
 # Test API dengan curl
-curl http://elendil.k25.com:8001/api/airing # Expected: JSON response dengan data anime
+curl http://elendil.k25.com:8001/api/airing # Expected: JSON response dengan data airing
 curl http://isildur.k25.com:8002/api/airing
 curl http://anarion.k25.com:8003/api/airing
 

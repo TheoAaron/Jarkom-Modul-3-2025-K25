@@ -217,8 +217,7 @@ iface eth0 inet static
 
 # TEST
 # Jaga-jaga jika belum install
-apt-get update
-apt-get install -y nano dnsutils lynx htop curl apache2-utils
+apt-get update && apt-get install -y nano dnsutils lynx htop curl apache2-utils
 
 # Node manapun
 ping -c 3 8.8.8.8

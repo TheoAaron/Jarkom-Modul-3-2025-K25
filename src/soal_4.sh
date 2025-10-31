@@ -1,5 +1,5 @@
 # Node Erendis
-apt-get install -y bind9
+apt-get update && apt-get install -y bind9
 
 cat > /etc/bind/named.conf.local << EOF
 zone "k25.com" {
@@ -50,7 +50,7 @@ EOF
 service named restart
 
 # Node Amdir
-apt-get install -y bind9
+apt-get update && apt-get install -y bind9
 
 cat > /etc/bind/named.conf.local << EOF
 zone "k25.com" {
@@ -83,7 +83,9 @@ dig @localhost k25.com
 dig @localhost palantir.k25.com
 dig @localhost elros.k25.com
 
-tail -f /var/log/syslog | grep named
+apt-get install systemd
+journalctl -u named -n 50
+journalctl -u bind9 -n 50
 
 # Node Amdir (slave)
 service named status

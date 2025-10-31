@@ -1,5 +1,5 @@
 # Node Elros
-apt-get install -y nginx
+apt-get update && apt-get install -y nginx
 
 cat > /etc/nginx/sites-available/elros << EOF
 upstream kesatria_numenor {
