@@ -47,7 +47,7 @@ options {
 };
 EOF
 
-service bind9 restart
+service named restart
 
 # Node Amdir
 apt-get install -y bind9
@@ -69,4 +69,41 @@ options {
 };
 EOF
 
-service bind9 restart
+service named restart
+
+# TEST
+
+# Node Erendis (master)
+service named status
+named-checkconf
+named-checkzone k25.com /etc/bind/jarkom/k25.com
+rndc status
+
+dig @localhost k25.com
+dig @localhost palantir.k25.com
+dig @localhost elros.k25.com
+
+tail -f /var/log/syslog | grep named
+
+# Node Amdir (slave)
+service named status
+ls -la /var/lib/bind/
+dig @localhost palantir.k25.com
+
+#  Node Client (Miriel, Celebrimbor)
+echo "nameserver 10.76.3.3" > /etc/resolv.conf
+
+nslookup palantir.k25.com
+nslookup elros.k25.com
+nslookup pharazon.k25.com
+nslookup elendil.k25.com
+nslookup isildur.k25.com
+nslookup anarion.k25.com
+nslookup galadriel.k25.com
+nslookup celeborn.k25.com
+nslookup oropher.k25.com
+
+dig k25.com NS
+
+echo "nameserver 10.76.3.4" > /etc/resolv.conf
+nslookup palantir.k25.com

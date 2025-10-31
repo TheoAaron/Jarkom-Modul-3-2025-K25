@@ -65,7 +65,7 @@ cat > /etc/bind/jarkom/3.76.10.in-addr.arpa << EOF
 4       IN      PTR     ns2.k25.com.    ; 10.76.3.4 -> ns2.k25.com (Amdir)
 EOF
 
-service bind9 restart
+service named restart
 
 # Node Amdir
 cat >> /etc/bind/named.conf.local << EOF
@@ -76,4 +76,24 @@ zone "3.76.10.in-addr.arpa" {
 };
 EOF
 
-service bind9 restart
+service named restart
+
+# TEST
+
+# Node Erendis
+dig @localhost www.k25.com
+dig @localhost k25.com TXT
+dig -x 10.76.3.3 @localhost
+dig -x 10.76.3.4 @localhost
+
+# Node Amdir
+dig @localhost www.k25.com
+dig @localhost k25.com TXT
+dig -x 10.76.3.3 @localhost
+
+# Node Client
+echo "nameserver 10.76.3.3" > /etc/resolv.conf
+nslookup www.k25.com
+dig k25.com TXT
+host 10.76.3.3
+host 10.76.3.4

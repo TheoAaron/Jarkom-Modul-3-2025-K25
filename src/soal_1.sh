@@ -1,6 +1,8 @@
 # SETUP SEMUA NODE
 # Node Durin
-up echo nameserver 192.168.122.1 > /etc/resolv.conf
+auto lo
+iface lo inet loopback
+    up echo nameserver 192.168.122.1 > /etc/resolv.conf
 
 auto eth0
 iface eth0 inet dhcp
@@ -183,7 +185,7 @@ iface eth0 inet static
 # Node Narvi
 auto eth0
 iface eth0 inet static
-    address 10.76.4.3
+    address 10.76.4.4
     netmask 255.255.255.0
     gateway 10.76.4.1
     up echo nameserver 192.168.122.1 > /etc/resolv.conf

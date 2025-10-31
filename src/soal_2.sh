@@ -65,6 +65,17 @@ service isc-dhcp-relay restart
 
 # TEST
 
+# Node Aldarion
+service isc-dhcp-server status
+cat /etc/dhcp/dhcpd.conf
+cat /etc/default/isc-dhcp-server
+cat /var/lib/dhcp/dhcpd.leases
+
+# Node Durin
+service isc-dhcp-relay status
+cat /etc/default/isc-dhcp-relay
+cat /proc/sys/net/ipv4/ip_forward
+
 # Node Gilgalad
 apt-get update
 apt-get install -y isc-dhcp-client
