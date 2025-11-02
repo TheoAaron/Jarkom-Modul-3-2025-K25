@@ -19,6 +19,12 @@ upstream kesatria_numenor {
 }
 
 server {
+    listen 80 default_server;
+    server_name _;
+    return 444;
+}
+
+server {
     listen 80;
     server_name elros.k25.com;
 
@@ -98,6 +104,14 @@ upstream kesatria_numenor {
     server 10.76.1.4:8003 weight=1;
 }
 
+# Default server - reject requests via IP
+server {
+    listen 80 default_server;
+    server_name _;
+    return 444;
+}
+
+# Main server - only accept requests via domain
 server {
     listen 80;
     server_name elros.k25.com;

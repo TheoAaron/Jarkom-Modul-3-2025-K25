@@ -16,6 +16,12 @@ EOF
 
 cat > /etc/nginx/sites-available/galadriel <<EOF
 server {
+    listen 80 default_server;
+    server_name _;
+    return 444;
+}
+
+server {
     listen 80;
     server_name galadriel.k25.com;
 
@@ -57,6 +63,14 @@ echo "Hostname: " . htmlspecialchars(gethostname(), ENT_QUOTES, 'UTF-8') . "\n";
 EOF
 
 cat > /etc/nginx/sites-available/celeborn <<EOF
+# Default server - reject requests via IP
+server {
+    listen 80 default_server;
+    server_name _;
+    return 444;
+}
+
+# Main server - only accept requests via domain
 server {
     listen 80;
     server_name celeborn.k25.com;
@@ -99,6 +113,14 @@ echo "Hostname: " . htmlspecialchars(gethostname(), ENT_QUOTES, 'UTF-8') . "\n";
 EOF
 
 cat > /etc/nginx/sites-available/oropher <<EOF
+# Default server - reject requests via IP
+server {
+    listen 80 default_server;
+    server_name _;
+    return 444;
+}
+
+# Main server - only accept requests via domain
 server {
     listen 80;
     server_name oropher.k25.com;

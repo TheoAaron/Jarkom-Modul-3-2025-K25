@@ -38,6 +38,14 @@ php artisan key:generate
 php artisan migrate:fresh --seed
 
 cat > /etc/nginx/sites-available/elendil << EOF
+# Default server - reject requests via IP
+server {
+    listen 8001 default_server;
+    server_name _;
+    return 444;
+}
+
+# Main server - only accept requests via domain
 server {
     listen 8001;
     server_name elendil.k25.com;
@@ -100,6 +108,12 @@ php artisan key:generate
 
 cat > /etc/nginx/sites-available/isildur << EOF
 server {
+    listen 8002 default_server;
+    server_name _;
+    return 444;
+}
+
+server {
     listen 8002;
     server_name isildur.k25.com;
 
@@ -160,6 +174,14 @@ EOF
 php artisan key:generate
 
 cat > /etc/nginx/sites-available/anarion << EOF
+# Default server - reject requests via IP
+server {
+    listen 8003 default_server;
+    server_name _;
+    return 444;
+}
+
+# Main server - only accept requests via domain
 server {
     listen 8003;
     server_name anarion.k25.com;

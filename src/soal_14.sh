@@ -7,6 +7,12 @@ htpasswd -bc /etc/nginx/.htpasswd noldor silvan
 
 cat > /etc/nginx/sites-available/galadriel << EOF
 server {
+    listen 8004 default_server;
+    server_name _;
+    return 444;
+}
+
+server {
     listen 8004;
     server_name galadriel.k25.com;
 
@@ -45,6 +51,14 @@ apt-get install -y apache2-utils
 htpasswd -bc /etc/nginx/.htpasswd noldor silvan
 
 cat > /etc/nginx/sites-available/celeborn << EOF
+# Default server - reject requests via IP
+server {
+    listen 8005 default_server;
+    server_name _;
+    return 444;
+}
+
+# Main server - only accept requests via domain
 server {
     listen 8005;
     server_name celeborn.k25.com;
@@ -84,6 +98,14 @@ apt-get install -y apache2-utils
 htpasswd -bc /etc/nginx/.htpasswd noldor silvan
 
 cat > /etc/nginx/sites-available/oropher << EOF
+# Default server - reject requests via IP
+server {
+    listen 8006 default_server;
+    server_name _;
+    return 444;
+}
+
+# Main server - only accept requests via domain
 server {
     listen 8006;
     server_name oropher.k25.com;

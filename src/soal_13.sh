@@ -1,6 +1,12 @@
 # Node Galadriel
 cat > /etc/nginx/sites-available/galadriel << EOF
 server {
+    listen 8004 default_server;
+    server_name _;
+    return 444;
+}
+
+server {
     listen 8004;
     server_name galadriel.k25.com;
 
@@ -29,6 +35,14 @@ service nginx restart
 
 # Node Celeborn
 cat > /etc/nginx/sites-available/celeborn << EOF
+# Default server - reject requests via IP
+server {
+    listen 8005 default_server;
+    server_name _;
+    return 444;
+}
+
+# Main server - only accept requests via domain
 server {
     listen 8005;
     server_name celeborn.k25.com;
@@ -58,6 +72,14 @@ service nginx restart
 
 # Node Oropher
 cat > /etc/nginx/sites-available/oropher << EOF
+# Default server - reject requests via IP
+server {
+    listen 8006 default_server;
+    server_name _;
+    return 444;
+}
+
+# Main server - only accept requests via domain
 server {
     listen 8006;
     server_name oropher.k25.com;

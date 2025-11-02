@@ -9,6 +9,13 @@ upstream kesatria_numenor {
 }
 
 server {
+    listen 80 default_server;
+    server_name _;
+    return 444;
+}
+
+# Main server - only accept requests via domain
+server {
     listen 80;
     server_name elros.k25.com;
 
