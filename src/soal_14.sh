@@ -147,15 +147,22 @@ cat /etc/nginx/.htpasswd
 # Node Client
 echo "nameserver 10.76.3.3" > /etc/resolv.conf
 
-# Test tanpa authentication (harus gagal - 401 Unauthorized)
-curl http://galadriel.k25.com:8004
-curl http://celeborn.k25.com:8005
-curl http://oropher.k25.com:8006
+curl -o /dev/null -s -w "HTTP Status: %{http_code}\n" http://10.76.2.5:8004 # Denied
 
-# Test dengan authentication (harus berhasil)
-curl -u noldor:silvan http://galadriel.k25.com:8004
-curl -u noldor:silvan http://celeborn.k25.com:8005
-curl -u noldor:silvan http://oropher.k25.com:8006
+curl -o /dev/null -s -w "HTTP Status: %{http_code}\n" http://galadriel.k25.com:8004 # Unauthorized
 
-# Test dengan password salah (harus gagal - 401 Unauthorized)
-curl -u noldor:wrongpass http://galadriel.k25.com:8004
+curl -u noldor:silvan http://galadriel.k25.com:8004 # OK
+
+curl -o /dev/null -s -w "HTTP Status: %{http_code}\n" -u noldor:wrongpass http://galadriel.k25.com:8004 # Unauthorized
+
+curl -o /dev/null -s -w "HTTP Status: %{http_code}\n" http://10.76.2.6:8005 # Denied
+
+curl -o /dev/null -s -w "HTTP Status: %{http_code}\n" http://celeborn.k25.com:8005 # 401
+
+curl -u noldor:silvan http://celeborn.k25.com:8005 # OK
+
+curl -o /dev/null -s -w "HTTP Status: %{http_code}\n" http://10.76.2.7:8006 # Denied
+
+curl -o /dev/null -s -w "HTTP Status: %{http_code}\n" http://oropher.k25.com:8006 # 401
+
+curl -u noldor:silvan http://oropher.k25.com:8006 # OK

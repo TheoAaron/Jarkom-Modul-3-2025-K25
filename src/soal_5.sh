@@ -16,10 +16,6 @@ ns2             IN      A       10.76.3.4
 ; CNAME untuk www
 www             IN      CNAME   k25.com.
 
-; TXT Records
-@               IN      TXT     "Cincin Sauron: elros.k25.com"
-@               IN      TXT     "Aliansi Terakhir: pharazon.k25.com"
-
 ; Node Records
 palantir        IN      A       10.76.4.3
 narvi           IN      A       10.76.4.4
@@ -31,6 +27,10 @@ anarion         IN      A       10.76.1.4
 galadriel       IN      A       10.76.2.5
 celeborn        IN      A       10.76.2.6
 oropher         IN      A       10.76.2.7
+
+; TXT Records - Pesan Rahasia
+elros           IN      TXT     "Cincin Sauron"
+pharazon        IN      TXT     "Aliansi Terakhir"
 EOF
 
 cat > /etc/bind/named.conf.local << EOF
@@ -82,18 +82,32 @@ service named restart
 
 # Node Erendis
 dig @localhost www.k25.com
-dig @localhost k25.com TXT
+
+dig @localhost elros.k25.com TXT
+dig @localhost pharazon.k25.com TXT
+
 dig -x 10.76.3.3 @localhost
 dig -x 10.76.3.4 @localhost
 
 # Node Amdir
 dig @localhost www.k25.com
-dig @localhost k25.com TXT
+dig @localhost elros.k25.com TXT
+dig @localhost pharazon.k25.com TXT
 dig -x 10.76.3.3 @localhost
 
 # Node Client (Miriel, Celebrimbor)
 echo "nameserver 10.76.3.3" > /etc/resolv.conf
+
 nslookup www.k25.com
-dig k25.com TXT
+dig www.k25.com
+
+dig elros.k25.com TXT
+nslookup -type=TXT elros.k25.com
+
+dig pharazon.k25.com TXT
+nslookup -type=TXT pharazon.k25.com
+
 host 10.76.3.3
 host 10.76.3.4
+dig -x 10.76.3.3
+dig -x 10.76.3.4

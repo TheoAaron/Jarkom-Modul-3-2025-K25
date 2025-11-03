@@ -114,23 +114,22 @@ service nginx restart
 ls -la /var/run/php/php8.4-fpm.sock
 service php8.4-fpm status
 
-# Node Client (Narv)
-echo "nameserver 10.76.3.3" > /etc/resolv.conf
+# Node Client (Narvi)
+curl -o /dev/null -s -w "HTTP Status: %{http_code}\n" http://10.76.2.5:8004 # Denied
 
-# Test akses via domain (sekarang PHP harus berjalan)
-curl http://galadriel.k25.com:8004
-# Expected: Hostname: galadriel
+curl http://galadriel.k25.com:8004 # Bisa
 
-curl http://celeborn.k25.com:8005
-# Expected: Hostname: celeborn
+curl -o /dev/null -s -w "HTTP Status: %{http_code}\n" http://10.76.2.6:8005 # Denide
 
-curl http://oropher.k25.com:8006
-# Expected: Hostname: oropher
+curl http://celeborn.k25.com:8005 # Bisa
 
-# Test dengan lynx
-apt-get update
-apt-get install -y lynx
+curl -o /dev/null -s -w "HTTP Status: %{http_code}\n" http://10.76.2.7:8006 # Denied
 
-lynx http://galadriel.k25.com:8004
-lynx http://celeborn.k25.com:8005
-lynx http://oropher.k25.com:8006
+curl http://oropher.k25.com:8006 # Bisa
+
+# Test dengan lynx (optional)
+# apt-get update
+# apt-get install -y lynx
+# lynx http://galadriel.k25.com:8004
+# lynx http://celeborn.k25.com:8005
+# lynx http://oropher.k25.com:8006

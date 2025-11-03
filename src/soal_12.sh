@@ -160,7 +160,14 @@ service nginx restart
 # Node Client 
 echo "nameserver 10.76.3.3" > /etc/resolv.conf
 
-# Test akses via domain (seharusnya bisa)
-curl http://galadriel.k25.com
-curl http://celeborn.k25.com
-curl http://oropher.k25.com
+curl -o /dev/null -s -w "HTTP Status: %{http_code}\n" http://10.76.2.5 # Denied
+
+curl http://galadriel.k25.com # Bisa
+
+curl -o /dev/null -s -w "HTTP Status: %{http_code}\n" http://10.76.2.6 # Denied
+
+curl http://celeborn.k25.com # Bisa 
+
+curl -o /dev/null -s -w "HTTP Status: %{http_code}\n" http://10.76.2.7 # Denied
+
+curl http://oropher.k25.com # Bisa

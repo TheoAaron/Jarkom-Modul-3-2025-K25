@@ -254,18 +254,31 @@ nginx -t
 
 netstat -tulpn | grep 8001
 
-curl -o /dev/null -s -w "%{http_code}\n" http://10.76.1.2:8001
-curl -s http://10.76.1.2:8001/api/airings | head -20
-curl -s http://10.76.1.2:8001 | head -50
+curl -o /dev/null -s -w "HTTP Status: %{http_code}\n" http://10.76.1.2:8001 # Harus denied
+
+curl -o /dev/null -s -w "HTTP Status: %{http_code}\n" http://elendil.k25.com:8001 # Bisa
+
+curl -s http://elendil.k25.com:8001/api/airings | head -20
 
 # Node Isildur
 netstat -tulpn | grep 8002
-curl -o /dev/null -s -w "%{http_code}\n" http://10.76.1.3:8002
+
+curl -o /dev/null -s -w "HTTP Status: %{http_code}\n" http://10.76.1.3:8002 # Harus denied
+
+curl -o /dev/null -s -w "HTTP Status: %{http_code}\n" http://isildur.k25.com:8002 # Bisa
 
 # Node Anarion
 netstat -tulpn | grep 8003
-curl -o /dev/null -s -w "%{http_code}\n" http://10.76.1.4:8003
+
+curl -o /dev/null -s -w "HTTP Status: %{http_code}\n" http://10.76.1.4:8003 # Harus denied
+
+curl -o /dev/null -s -w "HTTP Status: %{http_code}\n" http://anarion.k25.com:8003 # Bisa
 
 # Node Client (Miriel)
-curl -o /dev/null -s -w "%{http_code}\n" http://10.76.1.2:8001
-curl -o /dev/null -s -w "%{http_code}\n" http://elendil.k25.com:8001
+curl -o /dev/null -s -w "HTTP Status: %{http_code}\n" http://10.76.1.2:8001 # Harus denied
+
+curl -o /dev/null -s -w "HTTP Status: %{http_code}\n" http://elendil.k25.com:8001 # Bisa
+
+curl -o /dev/null -s -w "HTTP Status: %{http_code}\n" http://isildur.k25.com:8002 
+
+curl -o /dev/null -s -w "HTTP Status: %{http_code}\n" http://anarion.k25.com:8003

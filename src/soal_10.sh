@@ -46,14 +46,15 @@ service nginx status
 netstat -tulpn | grep :80
 
 # Node Miriel
+curl -o /dev/null -s -w "HTTP Status: %{http_code}\n" http://10.76.1.7 # Denied
+
+curl -o /dev/null -s -w "HTTP Status: %{http_code}\n" http://elros.k25.com # Bisa
+
 curl http://elros.k25.com
 curl http://elros.k25.com/api/airing
-
 for i in {1..10}; do
     curl -s http://elros.k25.com/api/airing | grep -o '"id":[0-9]*' | head -1
 done
-
-lynx http://elros.k25.com
 
 for i in {1..20}; do
     curl -s -o /dev/null -w "%{http_code}\n" http://elros.k25.com/api/airing
