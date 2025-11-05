@@ -37,6 +37,7 @@ service named restart
 
 # SEMUA NODE (kecuali Durin dan Minastir)
 cat > /etc/resolv.conf << EOF
+nameserver 192.168.122.1
 nameserver 10.76.5.2
 nameserver 8.8.8.8
 EOF
