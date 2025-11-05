@@ -5,6 +5,373 @@
 | Syifa Nurul Alfiah          | 5027241019 |
 | Theodorus Aaron Ugraha      | 5027241056 |
 
+## Soal 1: Setup Semua Node (Network, Forwarding, Firewall)
+
+### Tujuan
+Menyiapkan konfigurasi jaringan dasar untuk semua node: interface IP statis/dhcp, IP forwarding di router (`Durin`), dan aturan NAT serta forwarding dengan iptables.
+
+### Konfigurasi (ringkasan)
+
+Beberapa langkah kunci yang dilakukan di script:
+
+```bash
+# Aktifkan IP forwarding di Durin
+echo 1 > /proc/sys/net/ipv4/ip_forward
+echo 'net.ipv4.ip_forward=1' > /etc/sysctl.conf
+
+# NAT untuk akses internet
+iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE -s 10.76.0.0/16
+
+# Contoh aturan FORWARD antara subnet
+iptables -A FORWARD -i eth1 -o eth2 -j ACCEPT
+iptables -A FORWARD -i eth2 -o eth1 -j ACCEPT
+
+# Interface static examples (potongan untuk Durin/Elendil/...)
+auto eth1
+iface eth1 inet static
+    address 10.76.1.1
+    netmask 255.255.255.0
+```
+
+### Testing
+
+- Install paket utilitas: `apt-get install -y nano dnsutils lynx htop curl apache2-utils`
+- Test konektivitas: `ping -c 3 8.8.8.8` dan `ping -c 3 google.com` dari node mana pun.
+
+### Expected Output / Analisis
+
+- IP forwarding harus aktif di Durin.
+- Mesin di subnet internal dapat akses keluar melalui NAT.
+- Aturan iptables memungkinkan routing antar subnet yang didefinisikan.
+
+---
+
+## Soal 2: DHCP Server dan Relay (Aldarion & Durin)
+
+### Tujuan
+Mengonfigurasi Aldarion sebagai DHCP server untuk beberapa subnet dan Durin sebagai DHCP relay.
+
+### Konfigurasi
+
+Contoh potongan `/etc/dhcp/dhcpd.conf` pada Aldarion:
+
+```bash
+subnet 10.76.1.0 netmask 255.255.255.0 {
+    range 10.76.1.6 10.76.1.34;
+    range 10.76.1.68 10.76.1.94;
+    option routers 10.76.1.1;
+    option domain-name-servers 10.76.3.3;
+    default-lease-time 1800;
+    max-lease-time 3600;
+}
+
+# Host fixed-address example
+host Khamul {
+    hardware ethernet 02:42:dc:08:82:00;
+    fixed-address 10.76.3.95;
+}
+```
+
+Durin sebagai relay dikonfigurasi di `/etc/default/isc-dhcp-relay`:
+
+```text
+SERVERS="10.76.4.2"
+INTERFACES="eth1 eth2 eth3 eth4"
+```
+
+### Testing
+
+- Restart service: `service isc-dhcp-server restart` (Aldarion) dan `service isc-dhcp-relay restart` (Durin).
+- Client yang berada di subnet DHCP: jalankan `dhclient -v eth0` lalu cek `ip addr show eth0`.
+- Verifikasi lease file: `cat /var/lib/dhcp/dhcpd.leases`.
+
+### Expected Output / Analisis
+
+- Client dalam range akan menerima alamat sesuai konfigurasi.
+- Host dengan MAC tertentu (Khamul) akan mendapat fixed address 10.76.3.95.
+
+---
+
+## Soal 3: DNS Forwarder (Minastir)
+
+### Tujuan
+Menjalankan caching/forwarding DNS server (Bind9) yang mem-forward permintaan eksternal ke public resolvers.
+
+### Konfigurasi
+
+Potongan `named.conf.options` (Minastir):
+
+```text
+options {
+    directory "/var/cache/bind";
+    forwarders { 8.8.8.8; 8.8.4.4; 1.1.1.1; };
+    forward only;
+    allow-query { 10.76.0.0/16; localhost; };
+    listen-on { any; };
+    listen-on-v6 { none; };
+}
+```
+
+Semua node client diarahkan ke Minastir dengan menulis `nameserver 10.76.5.2` ke `/etc/resolv.conf`.
+
+### Testing
+
+- Restart named: `service named restart`.
+- Tes resolve: `nslookup google.com 10.76.5.2`, `dig @10.76.5.2 google.com`.
+
+### Expected Output
+
+- DNS query berhasil lewat forwarder; Minastir merespon untuk klien internal.
+
+---
+
+## Soal 4: DNS Authoritative - Master/Slave (Erendis & Amdir)
+
+### Tujuan
+Menyiapkan zone `k25.com` di Erendis sebagai master dan Amdir sebagai slave.
+
+### Konfigurasi
+
+Contoh zone file `/etc/bind/jarkom/k25.com` (Erendis):
+
+```text
+$TTL 604800
+@ IN SOA k25.com. root.k25.com. (
+    2024102801 ; Serial
+    604800
+    86400
+    2419200
+    604800 )
+;
+@ IN NS ns1.k25.com.
+@ IN NS ns2.k25.com.
+ns1 IN A 10.76.3.3
+ns2 IN A 10.76.3.4
+elros IN A 10.76.1.7
+elendil IN A 10.76.1.2
+...
+```
+
+Pada Amdir (slave) `named.conf.local` mengonfigurasi zone type slave dengan `masters { 10.76.3.3; };`.
+
+### Testing
+
+- Cek master: `named-checkzone k25.com /etc/bind/jarkom/k25.com`.
+- Dari client: `nslookup elros.k25.com` dengan nameserver 10.76.3.3 atau 10.76.3.4.
+
+### Expected Output
+
+- Record k25.com dapat di-resolve dari master dan slave; transfer zona berhasil ke slave.
+
+---
+
+## Soal 5: Penambahan Record (CNAME, TXT) dan Reverse Zone
+
+### Tujuan
+Menambahkan CNAME `www` -> `k25.com`, beberapa TXT records, dan membuat reverse zone untuk subnet 10.76.3.0/24.
+
+### Konfigurasi
+
+Contoh tambahan pada zone file:
+
+```text
+www IN CNAME k25.com.
+elros IN TXT "Cincin Sauron"
+pharazon IN TXT "Aliansi Terakhir"
+
+; Reverse zone /etc/bind/jarkom/3.76.10.in-addr.arpa
+3 IN PTR ns1.k25.com.
+4 IN PTR ns2.k25.com.
+```
+
+### Testing
+
+- `dig @localhost www.k25.com` untuk CNAME.
+- `dig @localhost elros.k25.com TXT` untuk TXT record.
+- `dig -x 10.76.3.3` untuk reverse lookup.
+
+### Expected Output
+
+- CNAME dan TXT muncul sesuai konfigurasi; PTR untuk IP di subnet 10.76.3.0 mengembalikan nama host.
+
+---
+
+## Soal 6: Verifikasi Lease DHCP (Client)
+
+### Tujuan
+Memverifikasi nilai lease yang diberikan oleh DHCP server untuk dua client contoh (Amandil, Gilgalad) sesuai konfigurasi Aldarion.
+
+### Konfigurasi & Testing
+
+- Di client: renew DHCP `dhclient -v eth0` lalu periksa `/var/lib/dhcp/dhclient.leases`.
+- Cari `lease-time`, `renew`, `rebind`, `expire` entry.
+
+### Expected / Analisis
+
+- Untuk subnet Manusia (10.76.1.0): default-lease-time 1800 (30 menit), max-lease-time 3600 (1 jam).
+- Untuk subnet Peri (10.76.2.0): default-lease-time 600 (10 menit), max-lease-time 3600 (1 jam).
+
+---
+
+## Soal 7: Men-deploy Laravel Workers (Elendil, Isildur, Anarion)
+
+### Tujuan
+Menyiapkan aplikasi Laravel (simple REST API) pada tiga worker, memasang PHP, composer, dan Nginx.
+
+### Konfigurasi (ringkasan)
+
+Langkah utama yang dilakukan pada tiap worker:
+
+```bash
+apt-get install -y php8.4 php8.4-fpm nginx git unzip
+curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+cd /var/www
+git clone https://github.com/elshiraphine/laravel-simple-rest-api.git
+cd laravel-simple-rest-api
+composer install
+cp .env.example .env
+php artisan key:generate
+```
+
+Nginx site dibuat masing-masing untuk listen pada port custom 8001/8002/8003 dan mengembalikan 444 untuk akses via IP.
+
+### Testing
+
+- Periksa `php artisan --version`, pastikan vendor terinstal.
+- `nginx -t` lalu restart `service nginx restart` dan `service php8.4-fpm restart`.
+
+### Expected Output
+
+- Aplikasi Laravel dapat diakses via domain masing-masing (elendil.k25.com:8001, isildur.k25.com:8002, anarion.k25.com:8003) dan endpoint `/api/airing` mengembalikan JSON.
+
+---
+
+## Soal 8: Database MariaDB dan Koneksi Laravel (Palantir + Elendil)
+
+### Tujuan
+Menyiapkan MariaDB di Palantir sebagai database backend dan konfigurasi aplikasi Laravel untuk terhubung ke sana.
+
+### Konfigurasi
+
+Palantir (database):
+
+```bash
+apt-get install -y mariadb-server mariadb-client
+mysql -e "CREATE DATABASE IF NOT EXISTS laravel_db;"
+mysql -e "CREATE USER IF NOT EXISTS 'laravel_user'@'%' IDENTIFIED BY 'password123';"
+mysql -e "GRANT ALL PRIVILEGES ON laravel_db.* TO 'laravel_user'@'%';"
+sed -i 's/^bind-address.*/bind-address = 0.0.0.0/' /etc/mysql/mariadb.conf.d/50-server.cnf
+service mariadb restart
+```
+
+Worker (`.env` contoh di Elendil/Isildur/Anarion):
+
+```text
+DB_CONNECTION=mysql
+DB_HOST=10.76.4.3
+DB_PORT=3306
+DB_DATABASE=laravel_db
+DB_USERNAME=laravel_user
+DB_PASSWORD=password123
+```
+
+Jalankan migrate di Elendil: `php artisan migrate:fresh --seed`.
+
+### Testing
+
+- Dari Palantir: `mysql -u laravel_user -ppassword123 -e "USE laravel_db; SHOW TABLES;"`.
+- Dari Elendil: `php artisan migrate:fresh --seed` dan cek endpoint API.
+
+### Expected Output
+
+- Database terbuat, tabel terisi seed data, dan API mengembalikan data dari database.
+
+---
+
+## Soal 9: Client Tests & Verifikasi (Miriel, Celebrimbor, Gilgalad, Amandil)
+
+### Tujuan
+Melakukan uji akses dari client ke masing-masing worker dan memverifikasi konten endpoint API konsisten.
+
+### Testing
+
+- Set nameserver ke DNS internal: `echo "nameserver 10.76.3.3" > /etc/resolv.conf`.
+- Tes masing-masing worker:
+
+```bash
+lynx http://elendil.k25.com:8001
+curl http://elendil.k25.com:8001/api/airing
+curl -s http://elendil.k25.com:8001/api/airing > /tmp/elendil.json
+curl -s http://isildur.k25.com:8002/api/airing > /tmp/isildur.json
+curl -s http://anarion.k25.com:8003/api/airing > /tmp/anarion.json
+diff /tmp/elendil.json /tmp/isildur.json
+diff /tmp/isildur.json /tmp/anarion.json
+```
+
+### Expected Output / Analisis
+
+- Endpoint `/api/airing` mengembalikan JSON dari masing-masing worker; perbedaan pada konten yang bersifat dinamis (mis. id) diharapkan, namun struktur response harus konsisten.
+
+---
+
+## Soal 10: Load Balancer Nginx (Round-Robin sederhana)
+
+### Tujuan
+Menyiapkan Nginx di Elros sebagai load balancer round-robin sederhana untuk tiga Laravel worker tanpa bobot.
+
+### Konfigurasi
+
+Contoh konfigurasi `/etc/nginx/sites-available/elros`:
+
+```bash
+upstream kesatria_numenor {
+    server 10.76.1.2:8001;
+    server 10.76.1.3:8002;
+    server 10.76.1.4:8003;
+}
+
+server {
+    listen 80 default_server;
+    server_name _;
+    return 444;
+}
+
+server {
+    listen 80;
+    server_name elros.k25.com;
+
+    location / {
+        proxy_pass http://kesatria_numenor;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    access_log /var/log/nginx/elros_access.log;
+    error_log /var/log/nginx/elros_error.log;
+}
+```
+
+### Testing
+
+- Enable site and restart Nginx: `ln -s /etc/nginx/sites-available/elros /etc/nginx/sites-enabled/ && service nginx restart`.
+- Dari client lakukan beberapa request ke `http://elros.k25.com/api/airing` berulang kali dan cek access log:
+
+```bash
+for i in {1..20}; do
+    curl -s http://elros.k25.com/api/airing | grep -o '"id":[0-9]*' | head -1
+done
+
+tail -100 /var/log/nginx/elros_access.log | grep -o "upstream.*" | sort | uniq -c
+```
+
+### Expected Output
+
+- Permintaan didistribusikan secara round-robin ke masing-masing worker; access log menunjukkan traffic ke `10.76.1.2:8001`, `10.76.1.3:8002`, `10.76.1.4:8003`.
+
+---
+
 ## Soal 11: Load Balancing dengan Weighted Round Robin
 
 ### Tujuan
